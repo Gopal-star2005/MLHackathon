@@ -500,7 +500,7 @@ By combining AI-assisted object understanding with geometry reconstruction and i
 | [Member 1]  | AI/ML & Computer Vision                |
 | [Member 2]  | Backend & 3D Reconstruction            |
 | [Member 3]  | Frontend & 3D Visualization            |
-| [Member 4]  | Research, Documentation & Presentation |
+| [Member 4]  | Research & Documentation                |
 
 ---
 
@@ -524,7 +524,7 @@ If no license file is present, all rights are reserved by default under applicab
   <h2>✨ SKETCH2SHAPE AI</h2>
   <b>Draw Your Imagination. Explore Its Dimensions.</b>
   <br/><br/>
-  Built with ❤️ by Team SKETCH2SHAPE AI
+  Built with ❤️ by Team **THE CHANAKYA**
   <br/>
   TECHZEPHYR 4.0 | IIT Bhubaneswar
 </p>
