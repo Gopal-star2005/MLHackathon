@@ -27,7 +27,7 @@
 [**The Idea**](#-the-idea-in-30-seconds) ·
 [**Why It's Different**](#-why-its-different) ·
 [**Features**](#-features) ·
-[**Architecture**](#-architecture) ·
+[**Architecture**](#-high-level-architecture) ·
 [**Quick Start**](#-quick-start) ·
 [**Benchmarks**](#-benchmarks) ·
 [**API**](#-rest-api)
@@ -132,44 +132,88 @@ No CUDA. No 16 GB VRAM. Benchmarked on an **Intel Core i5 with 8 GB RAM and 0 de
 
 ---
 
-## 🏗 Architecture
+## 🏗 High-Level Architecture
+
+The following diagram illustrates the complete end-to-end data flow of SKETCH2SHAPE AI:
 
 ```mermaid
-flowchart LR
-    subgraph UI["🖥️ React 19 + Three.js Studio"]
-        A1["✏️ Sketch Canvas"]
-        A2["📁 Upload"]
-        A3["👁️ 3D Viewport"]
-        A4["🔬 Diagnostics Drawer"]
+flowchart TD
+    subgraph UI["Frontend Studio (React 19 + Three.js)"]
+        Canvas["Interactive 2D Drawing Canvas"]
+        Upload["File Upload (PNG, JPG, WebP)"]
+        PreView["Preprocessing Preview & Canny Controls"]
+        Viewer["Three.js 3D Viewport (OrbitControls / PBR)"]
+        Drawer["Pipeline Tracing & Diagnostics Drawer"]
+        Exports["GLB & OBJ Export"]
     end
 
-    subgraph API["⚡ FastAPI Backend"]
-        B1["Upload & Preprocess"]
-        B2["Job Manager<br/>8-stage pipeline"]
+    subgraph API["FastAPI Backend (Uvicorn / Python 3.10+)"]
+        RouteUpload["/api/sketch/upload & /upload/base64"]
+        RoutePre["/api/image/preprocess"]
+        RouteGen["/api/generate/3d"]
+        RouteStatus["/api/generate/status/{job_id}"]
+        RouteModel["/api/model/{model_id} & /download"]
+        JobMgr["Job Manager (Async Stage Pipeline)"]
     end
 
-    subgraph CV["🧠 Understanding"]
-        C1["Groq LPU Vision<br/>Qwen 3.8-27B"]
-        C2["Local CV Classifier"]
-        C3{{"🛡️ Visual Identity<br/>Validation Gate"}}
+    subgraph CV["Computer Vision & Multimodal Understanding"]
+        PreService["Preprocessing Service (OpenCV / Pillow)"]
+        Gate["Visual Identity Validation Gate"]
+        GroqAI["Groq LPU Vision AI (Qwen 3.8-27B)"]
+        LocalCV["Local CV Contour & Topology Classifier"]
+        Conflict["Image-Prompt Conflict Detector"]
     end
 
-    subgraph E1["⚙️ Engine 1 · Local Manifold"]
-        D1["EDT"] --> D2["3D SDF"] --> D3["Procedural<br/>Synthesizers"] --> D4["Marching<br/>Cubes"] --> D5["Taubin<br/>Smoothing"] --> D6["PBR<br/>Materials"]
+    subgraph Engines["3D Reconstruction Engines"]
+        subgraph Engine1["Engine 1: Local Manifold Engine"]
+            EDT["Euclidean Distance Transform (EDT)"]
+            SDF["3D Signed Distance Field Voxel Grid"]
+            Procedural["Component Procedural Synthesizers"]
+            MC["Marching Cubes Isosurface Extraction"]
+            Smooth["Taubin & Laplacian Smoothing (Trimesh)"]
+            PBR["PBR Material & Texture Synthesizer"]
+        end
+        subgraph Engine2["Engine 2: Cloud Neural Engine (Optional)"]
+            Tripo["Tripo3D API (Large Reconstruction Model)"]
+        end
     end
 
-    subgraph E2["☁️ Engine 2 · Cloud Neural"]
-        F1["Tripo3D LRM"]
+    subgraph Storage["Persistent Asset Vault"]
+        StoreUploads["storage/uploads/"]
+        StoreProc["storage/processed/"]
+        StoreModels["storage/models/ (*.glb, *.obj)"]
+        StoreMeta["storage/metadata/ (*.json)"]
     end
 
-    A1 & A2 --> B1 --> B2 --> C3
-    C1 -.-> C3
-    C2 -.-> C3
-    C3 -->|local_manifold| D1
-    C3 -->|cloud_tripo| F1
-    D6 --> G[("📦 Asset Vault<br/>GLB · OBJ · JSON")]
-    F1 --> G
-    G --> A3 & A4
+    Canvas --> RouteUpload
+    Upload --> RouteUpload
+    RouteUpload --> PreService
+    PreService --> StoreUploads
+    PreService --> StoreProc
+    PreService --> PreView
+
+    RouteGen --> JobMgr
+    JobMgr --> Gate
+    Gate --> GroqAI
+    Gate --> LocalCV
+    GroqAI -.-> Conflict
+    LocalCV -.-> Conflict
+    Conflict --> Gate
+
+    Gate -->|Engine: local_manifold| Engine1
+    Gate -->|Engine: cloud_tripo| Engine2
+
+    EDT --> SDF --> Procedural --> MC --> Smooth --> PBR
+    PBR --> StoreModels
+    Tripo --> StoreModels
+    JobMgr --> StoreMeta
+
+    RouteStatus --> JobMgr
+    StoreModels --> RouteModel
+    StoreMeta --> RouteModel
+    RouteModel --> Viewer
+    RouteModel --> Drawer
+    RouteModel --> Exports
 ```
 
 <details>
@@ -514,11 +558,13 @@ cd frontend && npm run build
 
 ---
 
-## 👤 Author
+## 👥 Team
 
 <div align="center">
 
-**Rohit** · [@Rohit25-git](https://github.com/Rohit25-git)
+### 🏛️ The Chanakya
+
+*Strategy meets engineering.*
 
 Built for **TECHZEPHYR 4.0** at the **Indian Institute of Technology (IIT) Bhubaneswar**.
 
@@ -542,6 +588,6 @@ Released under the **MIT License**. See [LICENSE](LICENSE).
 
 **⭐ If SKETCH2SHAPE AI impressed you, star the repo! ⭐**
 
-<sub>Built with precision and passion for TECHZEPHYR 4.0 &bull; IIT Bhubaneswar</sub>
+<sub>Built by <b>The Chanakya</b> with precision and passion for TECHZEPHYR 4.0 &bull; IIT Bhubaneswar</sub>
 
 </div>
